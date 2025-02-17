@@ -15,14 +15,14 @@ const tripEventElement = siteMainElement.querySelector('.trip-events');
 export default class PagePresenter {
 
   init() {
+    render(new SortView(), tripEventElement);
     render(new EventListView(), tripEventElement);
+    render(new FiltersView(), filtersElement);
+    render(new TripInfoView(), tripMainElement, RenderPosition.AFTERBEGIN);
     const tripEventsListElement = document.querySelector('.trip-events__list');
     render(new EventEditFormView(), tripEventsListElement);
     for (let i = 0; i < 3; i++) {
       render(new EventView(), tripEventsListElement);
-      render(new FiltersView(), filtersElement);
-      render(new SortView(), tripEventElement);
-      render(new TripInfoView(), tripMainElement, RenderPosition.AFTERBEGIN);
     }
   }
 }
