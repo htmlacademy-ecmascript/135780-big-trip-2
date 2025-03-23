@@ -71,6 +71,7 @@ export default class EventEditFormView extends AbstractStatefulView {
     }
   };
 
+  // удаление элемента и очистка ресурсов
   removeElement() {
     super.removeElement();
     if (this.#datepickerStart) {
@@ -82,6 +83,7 @@ export default class EventEditFormView extends AbstractStatefulView {
       this.#datepickerEnd = null;
     }
   }
+  // обработчик при изменении даты начала события
 
   #dateFromChangeHandler = ([userDate]) => {
     this.updateElement({ dateFrom: userDate });
@@ -91,6 +93,7 @@ export default class EventEditFormView extends AbstractStatefulView {
       this.#datepickerEnd.setDate(userDate);
     }
   };
+  // обработчик при изменении даты конца события
 
   #dateToChangeHandler = ([userDate]) => {
     if (new Date(userDate) < new Date(this._state.dateFrom)) {
@@ -100,6 +103,7 @@ export default class EventEditFormView extends AbstractStatefulView {
       this.updateElement({ dateTo: userDate });
     }
   };
+  // Метод выбора даты начала и конца события
 
   #setDatepickers() {
     const startInput = this.element.querySelector('#event-start-time-1');
