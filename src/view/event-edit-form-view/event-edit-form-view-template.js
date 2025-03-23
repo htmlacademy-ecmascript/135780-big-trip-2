@@ -9,9 +9,13 @@ function createEventDestinationsList(destinations) {
 }
 
 function createOffersTemplate(offers, offersByType) {
+  if (!offers || !offersByType) {
+    return '';
+  }
+
   const ids = offersByType.map((offer) => offer.id);
 
-  return offers && offers.map((offer) =>
+  return offers.map((offer) =>
     `<div class="event__offer-selector">
       <input class="event__offer-checkbox  visually-hidden" id="${offer.id}" type="checkbox" name="${offer.title}" ${ids.includes(offer.id) ? 'checked' : ''}>
       <label class="event__offer-label" for="${offer.id}">
@@ -24,15 +28,18 @@ function createOffersTemplate(offers, offersByType) {
 }
 
 function createOffersContainerTemplate(offers, offersByType) {
-  return offers.length ? (
+  if (!offers || !offers.length) {
+    return '';
+  }
+
+  return (
     `<section class="event__section  event__section--offers">
       <h3 class="event__section-title  event__section-title--offers">Offers</h3>
-
       <div class="event__available-offers">
         ${createOffersTemplate(offers, offersByType)}
       </div>
     </section>`
-  ) : '';
+  );
 }
 
 function createDestinationPhotoTemplate(destinationById) {
@@ -46,7 +53,7 @@ function createEventEditFormTemplate(event, destinations, offersList) {
   const startTime = `${humanizeDate(dateFrom, EDIT_FORM_DATE_FORMAT).date} ${humanizeDate(dateFrom).time}`;
   const endTime = humanizeDate(dateTo, EDIT_FORM_DATE_FORMAT).date + humanizeDate(dateTo).time;
   const destinationById = destinations.find((dest) => dest.id === destination);
-  const offersByType = offersList.find((offer) => offer.type === type).offers;
+  const offersByType = offersList.find((offer) => offer.type === type)?.offers || [];
 
   return (
     `<li class="trip-events__item">
