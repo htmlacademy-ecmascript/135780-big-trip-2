@@ -18,4 +18,10 @@ function isEscape(evt) {
   return evt.key === 'Escape';
 }
 
-export { getRandomArrayElement, getRandomNumber, getRandomBoolean, getRandomDate, isEscape};
+function getRandomString(length) {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+
+export { getRandomArrayElement, getRandomNumber, getRandomBoolean, getRandomDate, isEscape, getRandomString};

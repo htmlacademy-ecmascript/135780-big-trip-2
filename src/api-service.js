@@ -31,36 +31,67 @@ class ApiService {
     return this._adaptOffers(data);
   }
 
+  // Метод для обновления точки маршрута на сервере
+  async updatePoint(point) {
+    const adaptedPoint = this._adaptToServer(point);
+    const response = await fetch(`${this._endPoint}/points/${point.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(adaptedPoint),
+      headers: new Headers({
+        'Content-Type': 'application/json',
+        'Authorization': this._authorization,
+      }),
+    });
+    this._checkStatus(response);
+    const data = await response.json();
+    return this._adaptFromServer(data);
+  }
+
   _checkStatus(response) {
     if (!response.ok) {
       throw new Error(`${response.status}: ${response.statusText}`);
     }
   }
 
-  // Адаптер для точек маршрута – преобразует данные сервера в формат приложения
+  // Адаптация точек, полученных с сервера, в формат приложения
   _adaptPoints(pointsFromServer) {
-    return pointsFromServer.map((point) => ({
-      id: point.id,
-      basePrice: point['base_price'],
-      dateFrom: new Date(point['date_from']),
-      dateTo: new Date(point['date_to']),
-      destination: point.destination, // предполагается, что destination – идентификатор
-      isFavorite: point['is_favorite'],
-      offers: point.offers, // если сервер возвращает массив офферов, можно оставить как есть или адаптировать
-      type: point.type,
-    }));
+    return pointsFromServer.map((point) => this._adaptFromServer(point));
   }
 
   _adaptDestinations(destinationsFromServer) {
-    // Если сервер возвращает массив объектов – можно вернуть напрямую,
-    // либо адаптировать, если структура отличается.
     return destinationsFromServer;
   }
 
   _adaptOffers(offersFromServer) {
-    // Если сервер возвращает данные в виде объекта с ключами (например, по типам),
-    // можно преобразовать его в массив нужной структуры.
     return offersFromServer;
+  }
+
+  // Адаптер для преобразования данных приложения в формат сервера
+  _adaptToServer(point) {
+    return {
+      'id': point.id,
+      'base_price': point.basePrice,
+      'date_from': point.dateFrom instanceof Date ? point.dateFrom.toISOString() : point.dateFrom,
+      'date_to': point.dateTo instanceof Date ? point.dateTo.toISOString() : point.dateTo,
+      'destination': point.destination,
+      'is_favorite': point.isFavorite,
+      'offers': point.offers,
+      'type': point.type,
+    };
+  }
+
+  // Адаптер для преобразования данных сервера в формат приложения
+  _adaptFromServer(data) {
+    return {
+      id: data.id,
+      basePrice: data.base_price,
+      dateFrom: new Date(data.date_from),
+      dateTo: new Date(data.date_to),
+      destination: data.destination,
+      isFavorite: data.is_favorite,
+      offers: data.offers,
+      type: data.type,
+    };
   }
 }
 

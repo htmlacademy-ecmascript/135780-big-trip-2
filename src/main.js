@@ -3,9 +3,9 @@ import EventsModel from './model/events-model.js';
 import DestinationsModel from './model/destinations-model.js';
 import OffersModel from './model/offers-model.js';
 import PagePresenter from './presenter/page-presenter.js';
+import { getRandomString } from './utils/common.js';
 
-// Установите свои значения
-const AUTHORIZATION = 'Basic your_random_string';
+const AUTHORIZATION = `Basic ${getRandomString(10)}`;
 const END_POINT = 'https://22.objects.htmlacademy.pro/big-trip';
 
 const apiService = new ApiService(END_POINT, AUTHORIZATION);
@@ -30,6 +30,7 @@ Promise.all([
     pagePresenter.init();
   })
   .catch((error) => {
+    // eslint-disable-next-line no-console
     console.error('Error loading data:', error);
     // При ошибке очистите контейнер и отобразите заглушку
     tripEventsContainer.innerHTML = '<p class="trip-events__msg">Failed to load data</p>';
