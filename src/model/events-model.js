@@ -1,10 +1,12 @@
-import { getMockEvent } from '../mock/events.js';
 import Observable from '../framework/observable.js';
 
-const EVENT_COUNT = 4;
-
 export default class EventsModel extends Observable {
-  #events = Array.from({ length: EVENT_COUNT }, getMockEvent);
+  #events = [];
+
+  constructor(initialEvents = []) {
+    super();
+    this.#events = initialEvents;
+  }
 
   get events() {
     return this.#events;
@@ -24,9 +26,9 @@ export default class EventsModel extends Observable {
   }
 
   deleteEvent(updateType, event) {
-    const index = this._events.findIndex((item) => item.id === event.id);
+    const index = this.#events.findIndex((item) => item.id === event.id);
     if (index !== -1) {
-      this._events.splice(index, 1);
+      this.#events.splice(index, 1);
     }
     this._notify(updateType, event);
   }
