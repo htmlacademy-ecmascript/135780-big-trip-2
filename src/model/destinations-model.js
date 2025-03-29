@@ -1,8 +1,12 @@
-import { getMockDestinations } from '../mock/destinations.js';
 import Observable from '../framework/observable.js';
 
 export default class DestinationsModel extends Observable {
-  #destinations = getMockDestinations();
+  #destinations = [];
+
+  constructor(initialDestinations = []) {
+    super();
+    this.#destinations = initialDestinations;
+  }
 
   get destinations() {
     return this.#destinations;

@@ -31,6 +31,9 @@ export default class PagePresenter {
     this.#tripMainElement = document.querySelector('.trip-main');
     this.#tripEventElement = document.querySelector('.page-main .trip-events');
 
+    // Очистка контейнера перед рендерингом данных
+    this.#tripEventElement.innerHTML = '';
+
     if (this.#events.length === 0) {
       this.#renderNoEvent();
       return;
