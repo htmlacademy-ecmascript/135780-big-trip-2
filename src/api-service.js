@@ -47,6 +47,36 @@ class ApiService {
     return this._adaptFromServer(data);
   }
 
+  // Метод для создания точки маршрута
+  async createPoint(point) {
+    const adaptedPoint = this._adaptToServer(point);
+    const response = await fetch(`${this._endPoint}/points`, {
+      method: 'POST',
+      body: JSON.stringify(adaptedPoint),
+      headers: new Headers({
+        'Content-Type': 'application/json',
+        'Authorization': this._authorization,
+      }),
+    });
+    this._checkStatus(response);
+    const data = await response.json();
+    return this._adaptFromServer(data);
+  }
+
+  // Метод для удаления точки маршрута
+  async deletePoint(point) {
+    const response = await fetch(`${this._endPoint}/points/${point.id}`, {
+      method: 'DELETE',
+      headers: new Headers({
+        'Authorization': this._authorization,
+      }),
+    });
+    this._checkStatus(response);
+    // Возвращаем объект удалённой точки для обновления модели.
+    return point;
+  }
+
+
   _checkStatus(response) {
     if (!response.ok) {
       throw new Error(`${response.status}: ${response.statusText}`);
