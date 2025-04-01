@@ -169,16 +169,4 @@ export default class EventPresenter {
       this.#handleCloseClick();
     }
   };
-
-  #handleDeleteClick = async () => {
-    try {
-      await this.#onDataChange(
-        UserAction.DELETE_EVENT,
-        UpdateType.MINOR,
-        this.#event
-      );
-    } catch(err) {2
-      // Ошибка будет обработана в модели
-    }
-  };
 }
