@@ -4,78 +4,66 @@ class ApiService {
     this._authorization = authorization;
   }
 
-  async getPoints() {
-    const response = await fetch(`${this._endPoint}/points`, {
-      headers: { 'Authorization': this._authorization },
+  async _load({ url, method = 'GET', body = null, headers = {} }) {
+    const response = await fetch(url, {
+      method,
+      body,
+      headers: new Headers({
+        'Authorization': this._authorization,
+        ...headers,
+      }),
     });
     this._checkStatus(response);
-    const data = await response.json();
-    return this._adaptPoints(data);
+    return response.json();
+  }
+
+  async _getData(endpoint, adaptFn) {
+    const data = await this._load({ url: `${this._endPoint}/${endpoint}` });
+    return adaptFn.call(this, data);
+  }
+
+  async _sendData(endpoint, method, point) {
+    const adaptedPoint = this._adaptToServer(point);
+    const url = point.id ? `${this._endPoint}/${endpoint}/${point.id}` : `${this._endPoint}/${endpoint}`;
+    const data = await this._load({
+      url,
+      method,
+      body: JSON.stringify(adaptedPoint),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return this._adaptFromServer(data);
+  }
+
+  async getPoints() {
+    return this._getData('points', this._adaptPoints);
   }
 
   async getDestinations() {
-    const response = await fetch(`${this._endPoint}/destinations`, {
-      headers: { 'Authorization': this._authorization },
-    });
-    this._checkStatus(response);
-    const data = await response.json();
-    return this._adaptDestinations(data);
+    return this._getData('destinations', this._adaptDestinations);
   }
 
   async getOffers() {
-    const response = await fetch(`${this._endPoint}/offers`, {
-      headers: { 'Authorization': this._authorization },
-    });
-    this._checkStatus(response);
-    const data = await response.json();
-    return this._adaptOffers(data);
+    return this._getData('offers', this._adaptOffers);
   }
 
   // Метод для обновления точки маршрута на сервере
   async updatePoint(point) {
-    const adaptedPoint = this._adaptToServer(point);
-    const response = await fetch(`${this._endPoint}/points/${point.id}`, {
-      method: 'PUT',
-      body: JSON.stringify(adaptedPoint),
-      headers: new Headers({
-        'Content-Type': 'application/json',
-        'Authorization': this._authorization,
-      }),
-    });
-    this._checkStatus(response);
-    const data = await response.json();
-    return this._adaptFromServer(data);
+    return this._sendData('points', 'PUT', point);
   }
 
   // Метод для создания точки маршрута
-  async createPoint(point) {
-    const adaptedPoint = this._adaptToServer(point);
-    const response = await fetch(`${this._endPoint}/points`, {
-      method: 'POST',
-      body: JSON.stringify(adaptedPoint),
-      headers: new Headers({
-        'Content-Type': 'application/json',
-        'Authorization': this._authorization,
-      }),
-    });
-    this._checkStatus(response);
-    const data = await response.json();
-    return this._adaptFromServer(data);
+  async addPoint(point) {
+    return this._sendData('points', 'POST', point);
   }
 
   // Метод для удаления точки маршрута
-  async deletePoint(point) {
-    const response = await fetch(`${this._endPoint}/points/${point.id}`, {
+  async deletePoint(pointId) {
+    await this._load({
+      url: `${this._endPoint}/points/${pointId}`,
       method: 'DELETE',
-      headers: new Headers({
-        'Authorization': this._authorization,
-      }),
     });
-    this._checkStatus(response);
-    // Возвращаем объект удалённой точки для обновления модели.
-    return point;
+    return true;
   }
-
 
   _checkStatus(response) {
     if (!response.ok) {
