@@ -85,18 +85,28 @@ class ApiService {
   }
 
   // Адаптер для преобразования данных приложения в формат сервера
+  // api-service.js
   _adaptToServer(point) {
-    return {
-      'id': point.id,
+    const adaptedPoint = {
       'base_price': point.basePrice,
       'date_from': point.dateFrom instanceof Date ? point.dateFrom.toISOString() : point.dateFrom,
       'date_to': point.dateTo instanceof Date ? point.dateTo.toISOString() : point.dateTo,
-      'destination': point.destination,
-      'is_favorite': point.isFavorite,
+      'destination': point.destination ? point.destination.id : null,
+      'is_favorite': point.isFavorite ?? false,
       'offers': point.offers,
-      'type': point.type,
+      'type': String(point.type).toLowerCase(),
     };
+
+    // Если у точки есть id (редактирование), добавляем его; при создании поле не передаётся
+    if (point.id) {
+      adaptedPoint.id = point.id;
+    }
+
+    // eslint-disable-next-line no-console
+    console.log('Адаптированный объект:', adaptedPoint);
+    return adaptedPoint;
   }
+
 
   // Адаптер для преобразования данных сервера в формат приложения
   _adaptFromServer(data) {

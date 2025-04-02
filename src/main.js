@@ -10,38 +10,26 @@ const END_POINT = 'https://22.objects.htmlacademy.pro/big-trip';
 
 const apiService = new ApiService(END_POINT, AUTHORIZATION);
 
-
 const tripEventsContainer = document.querySelector('.page-main .trip-events');
 tripEventsContainer.innerHTML = '<p class="trip-events__msg">Loading...</p>';
 
-Promise.allSettled([
+Promise.all([
   apiService.getPoints(),
   apiService.getDestinations(),
   apiService.getOffers(),
 ])
-  .then((results) => {
-    const [pointsResult, destinationsResult, offersResult] = results;
-    if (
-      pointsResult.status === 'fulfilled' &&
-      destinationsResult.status === 'fulfilled' &&
-      offersResult.status === 'fulfilled'
-    ) {
+  .then(([points, destinations, offers]) => {
+    // Создаём модели с данными с сервера
+    const eventsModel = new EventsModel(points, apiService);
+    const destinationsModel = new DestinationsModel(destinations);
+    const offersModel = new OffersModel(offers);
 
-      const eventsModel = new EventsModel(pointsResult.value);
-      const destinationsModel = new DestinationsModel(destinationsResult.value);
-      const offersModel = new OffersModel(offersResult.value);
-
-
-      const pagePresenter = new PagePresenter(eventsModel, destinationsModel, offersModel);
-      pagePresenter.init();
-    } else {
-      tripEventsContainer.innerHTML = '<p class="trip-events__msg">Failed to load data</p>';
-      // eslint-disable-next-line no-console
-      console.error('Error loading data:', results.filter((result) => result.status === 'rejected'));
-    }
+    // Инициализируем презентер страницы
+    const pagePresenter = new PagePresenter(eventsModel, destinationsModel, offersModel);
+    pagePresenter.init();
   })
   .catch((error) => {
     // eslint-disable-next-line no-console
-    console.error('Unexpected error:', error);
+    console.error('Error loading data:', error);
     tripEventsContainer.innerHTML = '<p class="trip-events__msg">Failed to load data</p>';
   });

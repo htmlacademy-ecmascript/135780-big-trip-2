@@ -82,7 +82,6 @@ export default class EventEditFormView extends AbstractStatefulView {
   #eventTypeChangeHandler = (evt) => {
     const newType = evt.target.value;
     const newOffersByType = this.#offers.find((offer) => offer.type.toLowerCase() === newType.toLowerCase())?.offers ?? [];
-
     this.updateElement({
       type: newType,
       offers: newOffersByType.filter((offer) => offer.checked),
@@ -93,12 +92,13 @@ export default class EventEditFormView extends AbstractStatefulView {
     const selectedDestination = this.#destinations.find((dest) => dest.name === evt.target.value);
 
     if (selectedDestination) {
-      this.updateElement({ destination: selectedDestination.id });
+      this.updateElement({ destination: selectedDestination });
       return;
     }
 
     evt.target.value = '';
   };
+
 
   #setDatepickers() {
     const startInput = this.element.querySelector('#event-start-time-1');
@@ -129,6 +129,9 @@ export default class EventEditFormView extends AbstractStatefulView {
   }
 
   #dateFromChangeHandler = ([userDate]) => {
+    if (!userDate) {
+      return;
+    }
     this.updateElement({ dateFrom: userDate });
     this.#datepickerEnd.set('minDate', userDate);
     if (new Date(this._state.dateTo) < userDate) {
@@ -138,18 +141,21 @@ export default class EventEditFormView extends AbstractStatefulView {
   };
 
   #dateToChangeHandler = ([userDate]) => {
+    if (!userDate) {
+      return;
+    }
     if (new Date(userDate) < new Date(this._state.dateFrom)) {
       this.#datepickerEnd.setDate(this._state.dateFrom);
       this.updateElement({ dateTo: this._state.dateFrom });
       return;
     }
-
     this.updateElement({ dateTo: userDate });
   };
 
   #priceChangeHandler = (evt) => {
-    evt.target.value = evt.target.value.replace(/\D/g, ''); // Удаляем все нечисловые символы
-    this._setState({ basePrice: Number(evt.target.value) || 0 });
+    evt.target.value = evt.target.value.replace(/\D/g, '');
+    const price = Number(evt.target.value) || 0;
+    this._setState({ basePrice: price });
   };
 
   #offersChangeHandler = (evt) => {
@@ -163,17 +169,14 @@ export default class EventEditFormView extends AbstractStatefulView {
 
   #formSubmitHandler = (evt) => {
     evt.preventDefault();
-
     const selectedOffers = Array.from(this.element.querySelectorAll('.event__offer-checkbox:checked')).map((input) => {
       const offerType = this.#offers.find((offer) => offer.type === this._state.type);
       return offerType ? offerType.offers.find((offer) => offer.id === input.id) : null;
     }).filter(Boolean);
-
     const updatedEvent = {
       ...EventEditFormView.parseStateToEvent(this._state),
       offers: selectedOffers,
     };
-
     this.#handleFormSubmit(updatedEvent);
   };
 
@@ -192,7 +195,7 @@ export default class EventEditFormView extends AbstractStatefulView {
 
   #editClickHandler = (evt) => {
     evt.preventDefault();
-    this.updateElement({ offers: this._state.offers }); // Обновляем состояние перед закрытием
+    this.updateElement({ offers: this._state.offers });
     this.#handleEditClick();
   };
 

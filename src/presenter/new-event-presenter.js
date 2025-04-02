@@ -24,11 +24,11 @@ export default class NewEventPresenter {
     this.#eventEditFormComponent = new EventEditFormView({
       event: {
         type: defaultType,
-        destination: '',
-        startDate: '',
-        endDate: '',
-        cost: 0,
-        offers: defaultOffers, // Передаем офферы, соответствующие типу
+        destination: null,
+        dateFrom: new Date(),
+        dateTo: new Date(),
+        basePrice: 0,
+        offers: defaultOffers,
       },
       destinations: this.#destinations,
       offers: this.#offers,
@@ -36,12 +36,18 @@ export default class NewEventPresenter {
       onEditClick: this.#handleCloseFormClick,
     });
 
+
     render(this.#eventEditFormComponent, document.querySelector('.trip-events__list'), RenderPosition.AFTERBEGIN);
   }
 
-  #formSubmitHandler = (updatedEvent) => {
-    this.#onDataChange(UserAction.ADD_EVENT, UpdateType.MINOR, updatedEvent);
-    this.#handleCloseFormClick(); // Закрываем форму после сохранения
+  #formSubmitHandler = async (updatedEvent) => {
+    try {
+      await this.#onDataChange(UserAction.ADD_EVENT, UpdateType.MINOR, updatedEvent);
+      this.#handleCloseFormClick(); // Закрываем форму после успешного сохранения
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Error adding new event:', error);
+    }
   };
 
   #handleCloseFormClick = () => {

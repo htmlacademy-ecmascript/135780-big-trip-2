@@ -13,7 +13,7 @@ export default class EventsModel extends Observable {
     return this.#events;
   }
 
-  // Обновления события: отправляет обновлённые данные на сервер, при успехе, обновляет локальные данные
+  // Обновление события: отправляет обновлённые данные на сервер, при успехе обновляет локальные данные
   async updateEvent(updateType, update) {
     const updatedData = await this._api.updatePoint(update);
     const index = this.#events.findIndex((event) => event.id === updatedData.id);
@@ -24,12 +24,19 @@ export default class EventsModel extends Observable {
     return updatedData;
   }
 
-  addEvent(updateType, newEvent) {
-    this.#events = [newEvent, ...this.#events];
-    this._notify(updateType, newEvent);
+  // Добавление нового события: отправляем POST‑запрос
+  async addEvent(updateType, newEvent) {
+    // eslint-disable-next-line no-console
+    console.log('Отправляем данные нового события:', newEvent);
+    const addedEvent = await this._api.addPoint(newEvent);
+    this.#events = [addedEvent, ...this.#events];
+    this._notify(updateType, addedEvent);
+    return addedEvent;
   }
 
-  deleteEvent(updateType, event) {
+  // Удаление события: отправляем DELETE‑запрос
+  async deleteEvent(updateType, event) {
+    await this._api.deletePoint(event.id);
     const index = this.#events.findIndex((item) => item.id === event.id);
     if (index !== -1) {
       this.#events.splice(index, 1);
