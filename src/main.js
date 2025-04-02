@@ -31,5 +31,5 @@ Promise.all([
   .catch((error) => {
     // eslint-disable-next-line no-console
     console.error('Error loading data:', error);
-    tripEventsContainer.innerHTML = '<p class="trip-events__msg">Failed to load data</p>';
+    tripEventsContainer.innerHTML = '<p class="trip-events__msg">Failed to load latest route information</p>';
   });

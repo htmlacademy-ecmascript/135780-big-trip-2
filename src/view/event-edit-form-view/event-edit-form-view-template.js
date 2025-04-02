@@ -1,19 +1,6 @@
 import { humanizeDate } from '../../utils/event';
-import { EVENT_TYPES } from '../../const';
 
 const EDIT_FORM_DATE_FORMAT = 'DD/MM/YY';
-
-function createEventTypeItemsTemplate(currentType) {
-  return EVENT_TYPES.map((type) => {
-    const lowerType = type.toLowerCase();
-    return (
-      `<div class="event__type-item">
-         <input id="event-type-${lowerType}-1" class="event__type-input visually-hidden" type="radio" name="event-type" value="${lowerType}" ${currentType.toLowerCase() === lowerType ? 'checked' : ''}>
-         <label class="event__type-label event__type-label--${lowerType}" for="event-type-${lowerType}-1">${type}</label>
-       </div>`
-    );
-  }).join('');
-}
 
 function createEventDestinationsList(destinations) {
   return destinations.map((destination) =>
@@ -28,7 +15,7 @@ function createOffersTemplate(offers) {
         id="${offer.id}"
         type="checkbox"
         name="${offer.title}"
-        ${ offer.isChecked ? 'checked' : ''}>
+        ${offer.isChecked ? 'checked' : ''}>
       <label class="event__offer-label" for="${offer.id}">
         <span class="event__offer-title">${offer.title}</span>
         &plus;&euro;&nbsp;
@@ -56,11 +43,22 @@ function createDestinationPhotoTemplate(destinationById) {
 }
 
 function createEventEditFormTemplate(event, destinations, offersList) {
-  const { basePrice, dateFrom, dateTo, destination, type } = event;
+  const { basePrice, dateFrom, dateTo, destination, type, isSaving, isDeleting } = event;
   const startTime = `${humanizeDate(dateFrom, EDIT_FORM_DATE_FORMAT).date} ${humanizeDate(dateFrom).time}`;
   const endTime = humanizeDate(dateTo, EDIT_FORM_DATE_FORMAT).date + humanizeDate(dateTo).time;
-  const destinationById = typeof destination === 'object' ? destination : destinations.find((dest) => dest.id === destination);
+  const destinationById = typeof destination === 'object'
+    ? destination
+    : destinations.find((dest) => dest.id === destination);
   const offersByType = offersList.find((offer) => offer.type.toLowerCase() === type.toLowerCase())?.offers ?? [];
+
+  let resetButtonText;
+  if (isDeleting) {
+    resetButtonText = 'Deleting...';
+  } else if (destination) {
+    resetButtonText = 'Delete';
+  } else {
+    resetButtonText = 'Cancel';
+  }
 
   return (
     `<li class="trip-events__item">
@@ -75,7 +73,7 @@ function createEventEditFormTemplate(event, destinations, offersList) {
             <div class="event__type-list">
               <fieldset class="event__type-group">
                 <legend class="visually-hidden">Event type</legend>
-                ${createEventTypeItemsTemplate(type)}
+                <!-- Здесь можно динамически генерировать элементы выбора типа -->
               </fieldset>
             </div>
           </div>
@@ -106,8 +104,12 @@ function createEventEditFormTemplate(event, destinations, offersList) {
             <input class="event__input event__input--price" id="event-price-1" type="number" name="event-price" value="${basePrice}" min="1">
           </div>
 
-          <button class="event__save-btn btn btn--blue" type="submit">Save</button>
-          <button class="event__reset-btn" type="reset">${destination ? 'Delete' : 'Cancel'}</button>
+          <button class="event__save-btn btn btn--blue" type="submit" ${isSaving ? 'disabled' : ''}>
+            ${isSaving ? 'Saving...' : 'Save'}
+          </button>
+          <button class="event__reset-btn" type="reset" ${isDeleting ? 'disabled' : ''}>
+            ${resetButtonText}
+          </button>
           <button class="event__rollup-btn" type="button">
             <span class="visually-hidden">Open event</span>
           </button>
