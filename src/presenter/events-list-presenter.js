@@ -95,21 +95,27 @@ export default class EventsListPresenter {
       try {
         const addedEvent = await this.#eventsModel.addEvent(updateType, updatedEvent);
         this.#events.push(addedEvent);
+        this.#reRenderEventList();
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error('Error adding event:', error);
+        throw error;
       }
     } else if (actionType === UserAction.DELETE_EVENT) {
       try {
         await this.#eventsModel.deleteEvent(updateType, updatedEvent);
         this.#events = this.#events.filter((event) => event.id !== updatedEvent.id);
+        this.#reRenderEventList();
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error('Error deleting event:', error);
+        throw error;
       }
+    } else {
+      this.#reRenderEventList();
     }
-    this.#reRenderEventList();
   };
+
 
   #handleEscKeyDown = (evt) => {
     if (evt.key === 'Escape') {

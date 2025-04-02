@@ -199,26 +199,43 @@ export default class EventEditFormView extends AbstractStatefulView {
     });
   };
 
-  #formSubmitHandler = (evt) => {
+  #formSubmitHandler = async (evt) => {
     evt.preventDefault();
+    this.setSaving(); // Устанавливаем состояние "Saving..."
+
     const selectedOffers = Array.from(this.element.querySelectorAll('.event__offer-checkbox:checked')).map((input) => {
       const offerType = this.#offers.find((offer) => offer.type === this._state.type);
       return offerType ? offerType.offers.find((offer) => offer.id === input.id) : null;
     }).filter(Boolean);
+
     const updatedEvent = {
       ...EventEditFormView.parseStateToEvent(this._state),
       offers: selectedOffers,
     };
-    this.setSaving(); // Устанавливаем состояние сохранения "Saving..."
-    Promise.resolve(this.#handleFormSubmit(updatedEvent))
-      .catch((error) => {
-        this.shake();
-        throw error;
-      })
-      .finally(() => {
+
+    let isSuccess = false;
+    try {
+      await this.#handleFormSubmit(updatedEvent);
+      isSuccess = true;
+      // Закрываем форму только при успешном сохранении
+      // eslint-disable-next-line no-unused-expressions
+      this._callback.closeForm && this._callback.closeForm(); // По другому не придумал как реализовать покачивание
+    } catch (error) {
+      this.shake();
+      // Ждем, пока анимация завершится
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      // eslint-disable-next-line no-console
+      console.error('Error during save:', error);
+    } finally {
+      // Если сохранение прошло успешно, сбрасываем состояние, иначе сбрасываем блокировку
+      if (isSuccess) {
         this.resetState();
-      });
+      } else {
+        this.updateElement({ isSaving: false });
+      }
+    }
   };
+
 
   #handleCancelClick = (evt) => {
     evt.preventDefault();

@@ -26,13 +26,13 @@ export default class EventsModel extends Observable {
 
   // Добавление нового события: отправляем POST‑запрос
   async addEvent(updateType, newEvent) {
-    // eslint-disable-next-line no-console
-    console.log('Отправляем данные нового события:', newEvent);
+    // Отправляем запрос к серверу и ждём его завершения.
     const addedEvent = await this._api.addPoint(newEvent);
     this.#events = [addedEvent, ...this.#events];
     this._notify(updateType, addedEvent);
     return addedEvent;
   }
+
 
   // Удаление события: отправляем DELETE‑запрос
   async deleteEvent(updateType, event) {
