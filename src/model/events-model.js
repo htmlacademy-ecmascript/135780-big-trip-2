@@ -13,34 +13,51 @@ export default class EventsModel extends Observable {
     return this.#events;
   }
 
-  // Обновление события: отправляет обновлённые данные на сервер, при успехе обновляет локальные данные
+  // Общий метод для выполнения запроса
+  async _executeRequest(apiFunc, updateType, payload, updateLocal) {
+    // eslint-disable-next-line no-console
+    console.log(`Sending request using ${apiFunc.name} for event:`, payload);
+    const result = await apiFunc.call(this._api, payload);
+    // eslint-disable-next-line no-console
+    console.log(`Server responded with ${apiFunc.name} result:`, result);
+    updateLocal(result);
+    this._notify(updateType, result);
+    return result;
+  }
+
+  // Обновление события
   async updateEvent(updateType, update) {
-    const updatedData = await this._api.updatePoint(update);
-    const index = this.#events.findIndex((event) => event.id === updatedData.id);
-    if (index !== -1) {
-      this.#events[index] = updatedData;
-      this._notify(updateType, updatedData);
+    return await this._executeRequest(this._api.updatePoint,updateType,update,(updatedData) => {
+      const index = this.#events.findIndex((event) => event.id === updatedData.id);
+      if (index !== -1) {
+        this.#events[index] = updatedData;
+      }
     }
-    return updatedData;
+    );
   }
 
-  // Добавление нового события: отправляем POST‑запрос
+  // Добавление нового события
   async addEvent(updateType, newEvent) {
-    // Отправляем запрос к серверу и ждём его завершения.
-    const addedEvent = await this._api.addPoint(newEvent);
-    this.#events = [addedEvent, ...this.#events];
-    this._notify(updateType, addedEvent);
-    return addedEvent;
+    return await this._executeRequest(this._api.addPoint,updateType,newEvent,(addedEvent) => {
+      this.#events = [addedEvent, ...this.#events];
+    }
+    );
   }
 
-
-  // Удаление события: отправляем DELETE‑запрос
+  // Удаление события
   async deleteEvent(updateType, event) {
-    await this._api.deletePoint(event.id);
-    const index = this.#events.findIndex((item) => item.id === event.id);
-    if (index !== -1) {
-      this.#events.splice(index, 1);
+    return await this._executeRequest(async (payload) => {
+      await this._api.deletePoint(payload.id);
+      return payload; // возвращаем исходное событие
+    },
+    updateType,
+    event,
+    (deletedEvent) => {
+      const index = this.#events.findIndex((item) => item.id === deletedEvent.id);
+      if (index !== -1) {
+        this.#events.splice(index, 1);
+      }
     }
-    this._notify(updateType, event);
+    );
   }
 }

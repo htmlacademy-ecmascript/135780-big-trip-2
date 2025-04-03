@@ -71,7 +71,6 @@ class ApiService {
     }
   }
 
-  // Адаптация точек, полученных с сервера, в формат приложения
   _adaptPoints(pointsFromServer) {
     return pointsFromServer.map((point) => this._adaptFromServer(point));
   }
@@ -85,19 +84,17 @@ class ApiService {
   }
 
   // Адаптер для преобразования данных приложения в формат сервера
-  // api-service.js
   _adaptToServer(point) {
     const adaptedPoint = {
       'base_price': point.basePrice,
       'date_from': point.dateFrom instanceof Date ? point.dateFrom.toISOString() : point.dateFrom,
       'date_to': point.dateTo instanceof Date ? point.dateTo.toISOString() : point.dateTo,
-      'destination': point.destination ? point.destination.id : null,
+      'destination': typeof point.destination === 'object' ? point.destination.id : point.destination, // если destination уже строка, оставляем её
       'is_favorite': point.isFavorite ?? false,
       'offers': point.offers,
       'type': String(point.type).toLowerCase(),
     };
 
-    // Если у точки есть id (редактирование), добавляем его; при создании поле не передаётся
     if (point.id) {
       adaptedPoint.id = point.id;
     }
@@ -106,7 +103,6 @@ class ApiService {
     console.log('Адаптированный объект:', adaptedPoint);
     return adaptedPoint;
   }
-
 
   // Адаптер для преобразования данных сервера в формат приложения
   _adaptFromServer(data) {

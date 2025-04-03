@@ -102,15 +102,38 @@ export default class EventPresenter {
     this.#replaceItemToForm();
   };
 
-  #handleFormSubmit = (updatedEvent) => {
-    this.#event = { ...this.#event, ...updatedEvent };
-    this.#onDataChange(UserAction.UPDATE_EVENT, UpdateType.MINOR, updatedEvent);
-    this.#replaceFormToItem();
+  #executeAction = async (actionType, updateType, payload, successCallback) => {
+    try {
+      // eslint-disable-next-line no-console
+      console.log(`Отправляем запрос ${actionType} на сервер:`, payload);
+      await this.#onDataChange(actionType, updateType, payload);
+      // eslint-disable-next-line no-console
+      console.log(`Сервер успешно обработал ${actionType}:`, payload);
+      if (typeof successCallback === 'function') {
+        successCallback();
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(`Ошибка при ${actionType}:`, error);
+      this.shake();
+      await new Promise((resolve) => setTimeout(resolve, 600));
+    }
   };
 
-  #handleDeleteClick = () => {
-    this.#onDataChange(UserAction.DELETE_EVENT, UpdateType.MINOR, this.#event); // Вызываем обработчик удаления
-    this.destroy();
+  #handleFormSubmit = async (updatedEvent) => {
+    // Обновляем локальную копию события
+    this.#event = { ...this.#event, ...updatedEvent };
+    await this.#executeAction(UserAction.UPDATE_EVENT,UpdateType.MINOR,updatedEvent,() => {
+      this.#replaceFormToItem();
+    }
+    );
+  };
+
+  #handleDeleteClick = async () => {
+    await this.#executeAction(UserAction.DELETE_EVENT,UpdateType.MINOR,this.#event,() => {
+      this.destroy();
+    }
+    );
   };
 
   _onDataChange = (updateType, userAction, event) => {
