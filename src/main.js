@@ -10,7 +10,6 @@ const END_POINT = 'https://22.objects.htmlacademy.pro/big-trip';
 
 const apiService = new ApiService(END_POINT, AUTHORIZATION);
 
-// Отобразите сообщение о загрузке (разметка может быть взята из markup)
 const tripEventsContainer = document.querySelector('.page-main .trip-events');
 tripEventsContainer.innerHTML = '<p class="trip-events__msg">Loading...</p>';
 
@@ -21,7 +20,7 @@ Promise.all([
 ])
   .then(([points, destinations, offers]) => {
     // Создаём модели с данными с сервера
-    const eventsModel = new EventsModel(points);
+    const eventsModel = new EventsModel(points, apiService);
     const destinationsModel = new DestinationsModel(destinations);
     const offersModel = new OffersModel(offers);
 
@@ -32,6 +31,5 @@ Promise.all([
   .catch((error) => {
     // eslint-disable-next-line no-console
     console.error('Error loading data:', error);
-    // При ошибке очистите контейнер и отобразите заглушку
-    tripEventsContainer.innerHTML = '<p class="trip-events__msg">Failed to load data</p>';
+    tripEventsContainer.innerHTML = '<p class="trip-events__msg">Failed to load latest route information</p>';
   });

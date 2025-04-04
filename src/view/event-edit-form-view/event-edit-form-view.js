@@ -35,14 +35,25 @@ export default class EventEditFormView extends AbstractStatefulView {
     this._restoreHandlers();
   }
 
-  get template() {
-    return createEventEditFormTemplate(this._state, this.#destinations, this.#offers);
+  static parseEventToState(event) {
+    return {
+      ...event,
+      basePrice: event.basePrice ?? 0,
+      isSaving: false,
+      isDeleting: false,
+    };
   }
 
-  getUpdatedEvent() {
+  static parseStateToEvent(state) {
     return {
-      ...this._state,
+      ...state,
+      basePrice: Number(state.basePrice) || 0,
+      offers: state.offers.map((offer) => ({ id: offer.id, title: offer.title, price: offer.price })),
     };
+  }
+
+  get template() {
+    return createEventEditFormTemplate(this._state, this.#destinations, this.#offers);
   }
 
   updateElement(updatedState) {
@@ -62,27 +73,49 @@ export default class EventEditFormView extends AbstractStatefulView {
     }
   }
 
+  // Методы для блокировки интерфейса и показа лоадера
+  setSaving() {
+    this.updateElement({ isSaving: true });
+  }
+
+  setDeleting() {
+    this.updateElement({ isDeleting: true });
+  }
+
+  resetState() {
+    this.updateElement({ isSaving: false, isDeleting: false });
+  }
+
+  shake() {
+    this.element.classList.add('shake');
+    setTimeout(() => {
+      this.element.classList.remove('shake');
+    }, 600);
+  }
+
   _restoreHandlers() {
     const resetButton = this.element.querySelector('.event__reset-btn');
     this.element.querySelector('.event__type-group').addEventListener('change', this.#eventTypeChangeHandler);
     this.element.querySelector('.event__input--destination').addEventListener('change', this.#destinationChangeHandler);
     this.#setDatepickers();
     this.element.querySelector('.event__input--price').addEventListener('input', this.#priceChangeHandler);
-    this.element.querySelectorAll('.event__offer-checkbox').forEach((checkbox) => checkbox.addEventListener('change', this.#offersChangeHandler));
+    this.element.querySelectorAll('.event__offer-checkbox').forEach((checkbox) =>
+      checkbox.addEventListener('change', this.#offersChangeHandler)
+    );
     this.element.querySelector('.event--edit').addEventListener('submit', this.#formSubmitHandler);
-    if (resetButton.innerHTML === 'Cancel') {
-      this.element.querySelector('.event__reset-btn').addEventListener('click', this.#handleCancelClick);
+
+    if (this.#handleDeleteClick) {
+      resetButton.addEventListener('click', this.#deleteClickHandler);
+    } else {
+      resetButton.addEventListener('click', this.#handleCancelClick);
     }
-    if (resetButton.innerHTML === 'Delete') {
-      this.element.querySelector('.event__reset-btn').addEventListener('click', this.#deleteClickHandler);
-    }
+
     this.element.querySelector('.event__rollup-btn').addEventListener('click', this.#editClickHandler);
   }
 
   #eventTypeChangeHandler = (evt) => {
     const newType = evt.target.value;
     const newOffersByType = this.#offers.find((offer) => offer.type.toLowerCase() === newType.toLowerCase())?.offers ?? [];
-
     this.updateElement({
       type: newType,
       offers: newOffersByType.filter((offer) => offer.checked),
@@ -91,12 +124,11 @@ export default class EventEditFormView extends AbstractStatefulView {
 
   #destinationChangeHandler = (evt) => {
     const selectedDestination = this.#destinations.find((dest) => dest.name === evt.target.value);
-
     if (selectedDestination) {
-      this.updateElement({ destination: selectedDestination.id });
+      // Сохраняем весь объект направления
+      this.updateElement({ destination: selectedDestination });
       return;
     }
-
     evt.target.value = '';
   };
 
@@ -129,6 +161,9 @@ export default class EventEditFormView extends AbstractStatefulView {
   }
 
   #dateFromChangeHandler = ([userDate]) => {
+    if (!userDate) {
+      return;
+    }
     this.updateElement({ dateFrom: userDate });
     this.#datepickerEnd.set('minDate', userDate);
     if (new Date(this._state.dateTo) < userDate) {
@@ -138,18 +173,21 @@ export default class EventEditFormView extends AbstractStatefulView {
   };
 
   #dateToChangeHandler = ([userDate]) => {
+    if (!userDate) {
+      return;
+    }
     if (new Date(userDate) < new Date(this._state.dateFrom)) {
       this.#datepickerEnd.setDate(this._state.dateFrom);
       this.updateElement({ dateTo: this._state.dateFrom });
       return;
     }
-
     this.updateElement({ dateTo: userDate });
   };
 
   #priceChangeHandler = (evt) => {
-    evt.target.value = evt.target.value.replace(/\D/g, ''); // Удаляем все нечисловые символы
-    this._setState({ basePrice: Number(evt.target.value) || 0 });
+    evt.target.value = evt.target.value.replace(/\D/g, '');
+    const price = Number(evt.target.value) || 0;
+    this._setState({ basePrice: price });
   };
 
   #offersChangeHandler = (evt) => {
@@ -161,8 +199,9 @@ export default class EventEditFormView extends AbstractStatefulView {
     });
   };
 
-  #formSubmitHandler = (evt) => {
+  #formSubmitHandler = async (evt) => {
     evt.preventDefault();
+    this.setSaving(); // Устанавливаем состояние "Saving..."
 
     const selectedOffers = Array.from(this.element.querySelectorAll('.event__offer-checkbox:checked')).map((input) => {
       const offerType = this.#offers.find((offer) => offer.type === this._state.type);
@@ -174,40 +213,59 @@ export default class EventEditFormView extends AbstractStatefulView {
       offers: selectedOffers,
     };
 
-    this.#handleFormSubmit(updatedEvent);
+    let isSuccess = false;
+    try {
+      await this.#handleFormSubmit(updatedEvent);
+      isSuccess = true;
+      // Закрываем форму только при успешном сохранении
+      // eslint-disable-next-line no-unused-expressions
+      this._callback.closeForm && this._callback.closeForm(); // По другому не придумал как реализовать покачивание
+    } catch (error) {
+      this.shake();
+      // Ждем, пока анимация завершится
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      // eslint-disable-next-line no-console
+      console.error('Error during save:', error);
+    } finally {
+      // Если сохранение прошло успешно, сбрасываем состояние, иначе сбрасываем блокировку
+      if (isSuccess) {
+        this.resetState();
+      } else {
+        this.updateElement({ isSaving: false });
+      }
+    }
   };
+
 
   #handleCancelClick = (evt) => {
     evt.preventDefault();
     this.#handleEditClick(EventEditFormView.parseStateToEvent(this._state));
   };
 
-  #deleteClickHandler = (evt) => {
+  #deleteClickHandler = async (evt) => {
     evt.preventDefault();
     if (!this.#handleDeleteClick) {
       return;
     }
-    this.#handleDeleteClick();
+    this.setDeleting();
+    // Задержка для отображения "Deleting..."
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      await this.#handleDeleteClick();
+    } catch (error) {
+      this.shake();
+      // Ждем, пока анимация завершится
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      // eslint-disable-next-line no-console
+      console.error('Error during delete:', error);
+    } finally {
+      this.resetState();
+    }
   };
 
   #editClickHandler = (evt) => {
     evt.preventDefault();
-    this.updateElement({ offers: this._state.offers }); // Обновляем состояние перед закрытием
+    this.updateElement({ offers: this._state.offers });
     this.#handleEditClick();
   };
-
-  static parseEventToState(event) {
-    return {
-      ...event,
-      basePrice: event.basePrice ?? 0,
-    };
-  }
-
-  static parseStateToEvent(state) {
-    return {
-      ...state,
-      basePrice: Number(state.basePrice) || 0,
-      offers: state.offers.map((offer) => ({ id: offer.id, title: offer.title, price: offer.price })),
-    };
-  }
 }

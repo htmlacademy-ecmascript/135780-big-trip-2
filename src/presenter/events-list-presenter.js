@@ -90,16 +90,32 @@ export default class EventsListPresenter {
     document.querySelector('.trip-main__event-add-btn').disabled = true;
   };
 
-  #handleDataChange = (actionType, updateType, updatedEvent) => {
+  #handleDataChange = async (actionType, updateType, updatedEvent) => {
     if (actionType === UserAction.ADD_EVENT) {
-      this.#eventsModel.addEvent(updateType, updatedEvent);
-      this.#events.push(updatedEvent);
+      try {
+        const addedEvent = await this.#eventsModel.addEvent(updateType, updatedEvent);
+        this.#events.push(addedEvent);
+        this.#reRenderEventList();
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error adding event:', error);
+        throw error;
+      }
     } else if (actionType === UserAction.DELETE_EVENT) {
-      this.#eventsModel.deleteEvent(updateType, updatedEvent);
-      this.#events = this.#events.filter((event) => event.id !== updatedEvent.id);
+      try {
+        await this.#eventsModel.deleteEvent(updateType, updatedEvent);
+        this.#events = this.#events.filter((event) => event.id !== updatedEvent.id);
+        this.#reRenderEventList();
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error deleting event:', error);
+        throw error;
+      }
+    } else {
+      this.#reRenderEventList();
     }
-    this.#reRenderEventList();
   };
+
 
   #handleEscKeyDown = (evt) => {
     if (evt.key === 'Escape') {
@@ -189,7 +205,6 @@ export default class EventsListPresenter {
     this.#eventPresenters.clear();
     this.#eventListComponent.clear();
   }
-
 
   #reRenderEventList() {
     this.#clearEventList();
