@@ -1,6 +1,6 @@
 # Проект «Большое путешествие»
 
-* Студент: [Денис Прокопьев](https://up.htmlacademy.ru/ecmascript-individual/2/user/135780).
+* Студент: [Денис Прокопьев.](https://up.htmlacademy.ru/ecmascript-individual/2/user/135780).
 * Наставник: [Давид Чачанов](https://htmlacademy.ru/profile/id2355549).
 
 ---

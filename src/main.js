@@ -1,35 +1,54 @@
-import ApiService from './api-service.js';
-import EventsModel from './model/events-model.js';
-import DestinationsModel from './model/destinations-model.js';
-import OffersModel from './model/offers-model.js';
 import PagePresenter from './presenter/page-presenter.js';
+import FilterPresenter from './presenter/filter-presenter.js';
+import PointsModel from './model/points-model.js';
+import FilterModel from './model/filter-model.js';
+import { render } from './framework/render.js';
+import NewPointButton from './view/new-point-button.js';
+import PointsApiService from './server/points-api-service.js';
 import { getRandomString } from './utils/common.js';
 
+const END_POINT = 'https://23.objects.htmlacademy.pro/big-trip';
 const AUTHORIZATION = `Basic ${getRandomString(10)}`;
-const END_POINT = 'https://22.objects.htmlacademy.pro/big-trip';
 
-const apiService = new ApiService(END_POINT, AUTHORIZATION);
+const tripMainElement = document.querySelector('.trip-main');
+const tripFiltersElement = tripMainElement.querySelector('.trip-controls__filters');
+const tripEventsSectionElement = document.querySelector('.trip-events');
 
-const tripEventsContainer = document.querySelector('.page-main .trip-events');
-tripEventsContainer.innerHTML = '<p class="trip-events__msg">Loading...</p>';
+const pointsModel = new PointsModel({
+  pointsApiService: new PointsApiService(END_POINT, AUTHORIZATION)
+});
+const filterModel = new FilterModel();
 
-Promise.all([
-  apiService.getPoints(),
-  apiService.getDestinations(),
-  apiService.getOffers(),
-])
-  .then(([points, destinations, offers]) => {
-    // Создаём модели с данными с сервера
-    const eventsModel = new EventsModel(points, apiService);
-    const destinationsModel = new DestinationsModel(destinations);
-    const offersModel = new OffersModel(offers);
+const newPointButtonComponent = new NewPointButton({
+  onClick: handleNewPointButtonClick
+});
 
-    // Инициализируем презентер страницы
-    const pagePresenter = new PagePresenter(eventsModel, destinationsModel, offersModel);
-    pagePresenter.init();
-  })
-  .catch((error) => {
-    // eslint-disable-next-line no-console
-    console.error('Error loading data:', error);
-    tripEventsContainer.innerHTML = '<p class="trip-events__msg">Failed to load latest route information</p>';
+const pagePresenter = new PagePresenter({
+  tripMainContainer: tripMainElement,
+  eventsListContainer: tripEventsSectionElement,
+  pointsModel,
+  filterModel,
+  newPointButtonComponent,
+  onNewPointDestroy: handleNewPointFormClose,
+});
+const filterPresenter = new FilterPresenter({
+  filterContainer: tripFiltersElement,
+  filterModel,
+  pointsModel
+});
+
+function handleNewPointFormClose() {
+  newPointButtonComponent.element.disabled = false;
+}
+
+function handleNewPointButtonClick() {
+  pagePresenter.createPoint();
+  newPointButtonComponent.element.disabled = true;
+}
+
+filterPresenter.init();
+pagePresenter.init();
+pointsModel.init()
+  .finally(() => {
+    render(newPointButtonComponent, tripMainElement);
   });
