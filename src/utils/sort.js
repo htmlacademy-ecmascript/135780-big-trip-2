@@ -1,11 +1,11 @@
-import { SORTS } from '../const';
+import dayjs from 'dayjs';
 
-function generateSort() {
-  return SORTS.map(({ type, sort, isChecked }) => ({
-    type,
-    sort,
-    isChecked,
-  }));
-}
+const getTimeDifference = ({dateFrom, dateTo}) => dayjs(dateTo).diff(dayjs(dateFrom));
 
-export { generateSort };
+const sortByPrice = (pointA, pointB) => pointB.basePrice - pointA.basePrice;
+
+const sortByTime = (pointA, pointB) => getTimeDifference(pointB) - getTimeDifference(pointA);
+
+const sortByDay = (pointA, pointB) => dayjs(pointA.dateFrom) - dayjs(pointB.dateFrom);
+
+export { sortByPrice, sortByTime, sortByDay };
